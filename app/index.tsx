@@ -5,6 +5,7 @@ import { Picker } from "@react-native-picker/picker";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "./firebaseConfig";
 
+
 (async () => {
   try {
     const snapshot = await getDocs(collection(db, "students"));
