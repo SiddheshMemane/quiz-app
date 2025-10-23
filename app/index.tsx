@@ -46,11 +46,11 @@ export default function Index() {
       setLoading(false);
 
       // Navigate to subject/chapters screen
-      router.push(
-        `/chapters?studentId=${studentId}&name=${encodeURIComponent(name)}&mobile=${encodeURIComponent(
-          mobile
-        )}&standard=${encodeURIComponent(standard)}`
-      );
+      router.push({
+        pathname: "/chapters",
+        params: { studentId, name, mobile, standard },
+      });
+
     } catch (error) {
       console.error("Error checking/adding student:", error);
       Alert.alert("Error", "Could not connect to Firestore.");

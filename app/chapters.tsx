@@ -47,15 +47,11 @@ export default function ChaptersScreen() {
   }, [standard, subject]);
 
   const handleChapterSelect = (chapter: string) => {
-    router.push(
-      `/quiz?chapter=${encodeURIComponent(chapter)}&subject=${encodeURIComponent(
-        subject
-      )}&standard=${encodeURIComponent(standard)}&name=${encodeURIComponent(
-        name as string
-      )}&mobile=${encodeURIComponent(mobile as string)}&studentId=${encodeURIComponent(
-        studentId as string
-      )}`
-    );
+    router.push({
+      pathname: "/quiz",
+      params: { chapter, subject, standard, name, mobile, studentId },
+    });
+
   };
 
   return (
