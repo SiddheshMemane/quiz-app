@@ -2,37 +2,60 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "reac
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Picker } from "@react-native-picker/picker";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, addDoc } from "firebase/firestore";
 import { db } from "./firebaseConfig";
-
-
-(async () => {
-  try {
-    const snapshot = await getDocs(collection(db, "students"));
-    console.log("Fetched students:", snapshot.size);
-  } catch (err) {
-    console.error("Firestore connection error:", err);
-  }
-})();
 
 export default function Index() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
+  const [email, setEmail] = useState("");
   const [standard, setStandard] = useState("");
-  const [subject, setSubject] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleStart = () => {
-    if (!name || !mobile || !standard || !subject) {
-      Alert.alert("Please fill all fields");
+  const handleStart = async () => {
+    if (!name || !mobile || !standard) {
+      Alert.alert("Please fill all mandatory fields (Name, Mobile, Standard)");
       return;
     }
 
-    router.push(
-      `/chapters?subject=${encodeURIComponent(subject)}&name=${encodeURIComponent(
-        name
-      )}&mobile=${encodeURIComponent(mobile)}&standard=${encodeURIComponent(standard)}`
-    );
+    try {
+      setLoading(true);
+      const studentsRef = collection(db, "students");
+      const q = query(studentsRef, where("mobile", "==", Number(mobile)));
+      const snapshot = await getDocs(q);
+
+      let studentId = null;
+
+      if (!snapshot.empty) {
+        // Student already exists
+        studentId = snapshot.docs[0].id;
+        console.log("Existing student found:", studentId);
+      } else {
+        // Create new student record
+        const docRef = await addDoc(studentsRef, {
+          name,
+          email: email || "",
+          mobile: Number(mobile),
+          standard,
+        });
+        studentId = docRef.id;
+        console.log("New student added:", studentId);
+      }
+
+      setLoading(false);
+
+      // Navigate to subject/chapters screen
+      router.push(
+        `/chapters?studentId=${studentId}&name=${encodeURIComponent(name)}&mobile=${encodeURIComponent(
+          mobile
+        )}&standard=${encodeURIComponent(standard)}`
+      );
+    } catch (error) {
+      console.error("Error checking/adding student:", error);
+      Alert.alert("Error", "Could not connect to Firestore.");
+      setLoading(false);
+    }
   };
 
   return (
@@ -52,39 +75,29 @@ export default function Index() {
         value={mobile}
         onChangeText={setMobile}
       />
+      <TextInput
+        style={styles.input}
+        placeholder="Enter Email (Optional)"
+        keyboardType="email-address"
+        value={email}
+        onChangeText={setEmail}
+      />
 
-      {/* Dropdown for Standard */}
       <Text style={styles.label}>Select Standard</Text>
       <View style={styles.pickerContainer}>
-        <Picker
-          selectedValue={standard}
-          onValueChange={(value) => setStandard(value)}
-          mode="dropdown"
-        >
+        <Picker selectedValue={standard} onValueChange={setStandard}>
           <Picker.Item label="Select Standard" value="" />
           <Picker.Item label="11" value="11" />
           <Picker.Item label="12" value="12" />
         </Picker>
       </View>
 
-      {/* Dropdown for Subject */}
-      <Text style={styles.label}>Select Subject</Text>
-      <View style={styles.pickerContainer}>
-        <Picker
-          selectedValue={subject}
-          onValueChange={(value) => setSubject(value)}
-          mode="dropdown"
-        >
-          <Picker.Item label="Select Subject" value="" />
-          <Picker.Item label="Math" value="Math" />
-          <Picker.Item label="Physics" value="Physics" />
-          <Picker.Item label="Chemistry" value="Chemistry" />
-          <Picker.Item label="Biology" value="Biology" />
-        </Picker>
-      </View>
-
-      <TouchableOpacity style={styles.button} onPress={handleStart}>
-        <Text style={styles.buttonText}>Next</Text>
+      <TouchableOpacity
+        style={[styles.button, loading && { backgroundColor: "#aaa" }]}
+        onPress={handleStart}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>{loading ? "Please Wait..." : "Next"}</Text>
       </TouchableOpacity>
     </View>
   );
