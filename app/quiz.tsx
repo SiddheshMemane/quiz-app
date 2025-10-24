@@ -76,8 +76,9 @@ export default function QuizScreen() {
             Alert.alert("Missing fields", "Please select all fields before starting the quiz.");
             return;
           }
-          const subjectsArray = subjects ? JSON.parse(subjects as string) : [];
-          const chaptersArray = chapters ? JSON.parse(chapters as string) : [];
+          const subjectsArray = typeof subjects === "string" ? JSON.parse(subjects) : subjects || [];
+          const chaptersArray = typeof chapters === "string" ? JSON.parse(chapters) : chapters || [];
+
 
 
           const qBase = query(
