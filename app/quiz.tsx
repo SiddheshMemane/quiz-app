@@ -80,26 +80,28 @@ export default function QuizScreen() {
           const chaptersArray = chapters ? JSON.parse(chapters as string) : [];
 
 
-          const qBase = query(collection(db, "questions"), where("standard", "==", standard));
+          const qBase = query(
+            collection(db, "questions"),
+            where("standard", "==", standard),
+            where("subject", "in", subjectsArray.slice(0, 10))
+          );
           const snapshot = await getDocs(qBase);
 
           // Client-side filtering (since Firestore can't OR across arrays)
           const filtered = snapshot.docs
             .map((doc) => doc.data())
             .filter((data) => {
-              const matchSubject = subjectsArray.includes(data.subject);
               const matchChapter = chaptersArray.includes(data.chapter);
               const matchExamType =
                 !examType || (data.question_type && data.question_type.includes(examType));
               const matchDifficulty =
                 !difficulty || data.question_level === difficulty;
 
-              return matchSubject && matchChapter && matchExamType && matchDifficulty;
+              return matchChapter && matchExamType && matchDifficulty;
             });
 
           setQuestions(filtered);
           setQuestionCount(filtered.length);
-
           setAnswers(new Array(filtered.length).fill(null));
           setLoading(false);
           return;

@@ -31,16 +31,16 @@ export default function TestSelectionScreen() {
   const [topic, setTopic] = useState("");
   const [loading, setLoading] = useState(false);
   const [chapter, setChapter] = useState("");
+  const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
+
 
 
   // 🔹 Fetch chapters based on standard + subject(s)
   useEffect(() => {
     const fetchChapters = async () => {
       // Guard against missing inputs
-      console.log(standard)
       if (!standard || (testType === "competitive" && (!subjects || subjects.length === 0)) || (testType !== "competitive" && !subject)) {
         setChapters([]);
-        console.log("empty return")
         return;
       }
 
@@ -63,7 +63,6 @@ export default function TestSelectionScreen() {
         });
 
         setChapters(Array.from(allChapters));
-        // console.log("Fetched chapters:", Array.from(allChapters));
       } catch (err) {
         console.error("Error fetching chapters:", err);
         Alert.alert("Error", "Could not load chapters.");
@@ -74,6 +73,28 @@ export default function TestSelectionScreen() {
 
     fetchChapters();
   }, [standard, subject, subjects, testType]);
+
+  useEffect(() => {
+    let newSubjects: string[] = [];
+
+    switch (examType) {
+      case "jee":
+        newSubjects = ["Mathematics", "Physics", "Chemistry"];
+        break;
+      case "neet":
+        newSubjects = ["Biology", "Physics", "Chemistry"];
+        break;
+      case "mhtcet":
+        // You can later let the student choose PCM/PCB stream if needed
+        newSubjects = ["Mathematics", "Physics", "Chemistry", "Biology"];
+        break;
+      default:
+        newSubjects = [];
+    }
+
+    setAvailableSubjects(newSubjects);
+    setSubjects([]); // reset selected subjects when examType changes
+  }, [examType]);
 
 
   // 🔹 Fetch topics for selected chapter (for Practice mode)
@@ -267,8 +288,10 @@ useEffect(() => {
             <Picker.Item label="neet" value="neet" />
           </Picker>
 
+          {examType ? (
+        <>
           <Text style={styles.label}>Select Subjects</Text>
-          {["Mathematics", "Physics", "Chemistry", "Biology"].map((s) => (
+          {availableSubjects.map((s) => (
             <TouchableOpacity
               key={s}
               style={[
@@ -286,6 +309,8 @@ useEffect(() => {
               <Text style={styles.chapterText}>{s}</Text>
             </TouchableOpacity>
           ))}
+        </>
+      ) : null}
 
           {
             examType &&
